@@ -1,4 +1,4 @@
-module RecursionTasks where
+module Rekursion1 where
 
 import Numeric.Natural (Natural)
 

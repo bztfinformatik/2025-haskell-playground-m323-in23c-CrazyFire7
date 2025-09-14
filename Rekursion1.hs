@@ -1,34 +1,40 @@
-module Rekursion1 where
+import Numeric.Natural
 
-import Numeric.Natural (Natural)
-
--- Exponentielles Wachstum mit jährlicher Einlage am Jahresanfang
--- C(0) = 0
--- C(t) = (C(t-1) + d) * (1 + i/100)
-capital :: forall a. Fractional a => a -> a -> Natural -> a
+-- Funktion capital
+capital :: Fractional a => a -> a -> Natural -> a
 capital d i t
-  | t == 0    = 0
-  | otherwise = (capital d i (t - 1) + d) * (1 + i / 100)
-
--- Zeitreihe des Medikamentenspiegels:
--- Start: Tag 0 -> 0.0
--- An jedem Tag: new = (prev + m) * (1 - r/100)
--- Ergebnisliste in der Reihenfolge: (t, ... , 1, 0)
-druglevelTimeSeries :: forall a. Fractional a => a -> a -> Natural -> [(Natural, a)]
-druglevelTimeSeries m r t = go 1 0 []
+  | t == 0 = 0
+  | otherwise = previousCapital + d + yield
   where
-    keep = 1 - r / 100
-    -- go day prev acc: day = aktueller Tag (1..t), prev = Level am Ende von (day-1)
-    -- acc sammelt in absteigender Reihenfolge, indem wir stets vorn anfügen
-    go :: Natural -> a -> [(Natural, a)] -> [(Natural, a)]
-    go day prev acc
-      | day > t   = acc ++ [(0, 0)]
-      | otherwise =
-          let level = (prev + m) * keep
-          in go (day + 1) level ((day, level) : acc)
+    previousCapital = capital d i (t - 1)
+    yield = (previousCapital + d) * (i / 100)
+  
+-- Funktion druglevelTimeSeries
+-- create a time series of drug levels
+-- m: daily administered dose
+-- r: brake down rate in percentage
+-- t: days (length of time series)
+druglevelTimeSeries :: Fractional a => a -> a -> Natural -> [(Natural, a)]
+-- pattern for day 0, ensure to terminate recursion
+druglevelTimeSeries _ _ 0 = [(0, 0)]
+-- pattern for subsequent days, prepend current day to previous days
+druglevelTimeSeries m r t = (t, currentLevel) : previousDays
+  where
+    previousDays = druglevelTimeSeries m r (t - 1)
+    -- use pattern matching to get second element of first tuple in list
+    ((_, previousLevel) : _) = previousDays
+    currentLevel = (previousLevel + m) * (1 - r / 100)
 
--- Euklidischer Algorithmus für den ggT
+-- egcd (ggT)
+
 egcd :: Integral a => a -> a -> a
+egcd 0 0 = 0
+egcd p 0 = abs p
+egcd 0 q = abs q
 egcd p q
-  | q == 0    = abs p
-  | otherwise = egcd q (p `mod` q)
+  | remainder == 0 = n
+  | otherwise = egcd n remainder
+  where
+    m = max (abs p) (abs q)
+    n = min (abs p) (abs q)
+    remainder = mod m n
